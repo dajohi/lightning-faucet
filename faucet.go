@@ -19,8 +19,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/decred/dcrd/chaincfg/chainhash"
-	"github.com/decred/dcrd/dcrutil/v2"
-	"github.com/decred/dcrd/wire"
+	"github.com/decred/dcrd/dcrutil/v3"
 	"github.com/decred/dcrlnd/lnrpc"
 	"github.com/decred/dcrlnd/macaroons"
 	"google.golang.org/grpc"
@@ -70,10 +69,9 @@ type lightningFaucet struct {
 
 	templates *template.Template
 
-	openChannels map[wire.OutPoint]time.Time
-	cfg          *config
+	cfg *config
 
-	//Network info
+	// Network info
 	network string
 }
 
@@ -159,7 +157,7 @@ func getChainInfo(l lnrpc.LightningClient) (*lnrpc.Chain, error) {
 	infoReq := &lnrpc.GetInfoRequest{}
 	info, err := l.GetInfo(ctxb, infoReq)
 	if err != nil {
-		return nil, fmt.Errorf("get info: %v", err)
+		return nil, fmt.Errorf("get info: %w", err)
 	}
 
 	return info.Chains[0], nil
@@ -174,7 +172,7 @@ func newLightningFaucet(cfg *config,
 	tlsCertPath := cleanAndExpandPath(cfg.TLSCertPath)
 	creds, err := credentials.NewClientTLSFromFile(tlsCertPath, "")
 	if err != nil {
-		return nil, fmt.Errorf("unable to read cert file: %v", err)
+		return nil, fmt.Errorf("unable to read cert file: %w", err)
 	}
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(creds)}
 
@@ -197,7 +195,7 @@ func newLightningFaucet(cfg *config,
 
 	conn, err := grpc.Dial(cfg.LndNode, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("unable to dial to lnd's gRPC server: %v", err)
+		return nil, fmt.Errorf("unable to dial to lnd's gRPC server: %w", err)
 	}
 
 	// If we're able to connect out to the lnd node, then we can start up
@@ -366,7 +364,7 @@ func (l *lightningFaucet) closeChannel(chanPoint *lnrpc.ChannelPoint,
 	// transaction has been broadcast.
 	resp, err := stream.Recv()
 	if err != nil {
-		return nil, fmt.Errorf("unable to close chan: %v", err)
+		return nil, fmt.Errorf("unable to close chan: %w", err)
 	}
 
 	update, ok := resp.Update.(*lnrpc.CloseStatusUpdate_ClosePending)
@@ -516,7 +514,7 @@ func (l *lightningFaucet) fetchHomeState() (*homePageContext, error) {
 		FaucetVersion:           Version(),
 		FaucetCommit:            SourceCommit(),
 		NumCoins:                dcrutil.Amount(walletBalance.ConfirmedBalance).ToCoin(),
-		GitCommitHash:           strings.Replace(gitHash, "'", "", -1),
+		GitCommitHash:           strings.ReplaceAll(gitHash, "'", ""),
 		NodeAddr:                nodeAddr,
 		NumConfs:                6,
 		FormFields:              make(map[string]string),
@@ -843,7 +841,7 @@ func (l *lightningFaucet) CloseAllChannels() error {
 	openChanReq := &lnrpc.ListChannelsRequest{}
 	openChannels, err := l.lnd.ListChannels(ctxb, openChanReq)
 	if err != nil {
-		return fmt.Errorf("unable to fetch open channels: %v", err)
+		return fmt.Errorf("unable to fetch open channels: %w", err)
 	}
 
 	for _, channel := range openChannels.Channels {

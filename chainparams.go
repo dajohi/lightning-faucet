@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/decred/dcrd/chaincfg"
+	"github.com/decred/dcrd/chaincfg/v3"
 )
 
 // params is used to group parameters for various networks such as the main
@@ -15,21 +15,21 @@ var (
 	// decredMainNetParams contains parameters specific to the main network
 	// (wire.MainNet).
 	decredMainNetParams = params{
-		Params:  &chaincfg.MainNetParams,
+		Params:  chaincfg.MainNetParams(),
 		rpcPort: "10009",
 	}
 
 	// decredTestNet3Params contains parameters specific to the test network
 	// (wire.TestNet3).
 	decredTestNet3Params = params{
-		Params:  &chaincfg.TestNet3Params,
+		Params:  chaincfg.TestNet3Params(),
 		rpcPort: "10009",
 	}
 
 	// decredSimNetParams contains parameters specific to the simulation test network
 	// (wire.SimNet).
 	decredSimNetParams = params{
-		Params:  &chaincfg.SimNetParams,
+		Params:  chaincfg.SimNetParams(),
 		rpcPort: "10009",
 	}
 )
